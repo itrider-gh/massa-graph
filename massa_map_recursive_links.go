@@ -45,6 +45,15 @@ var wg sync.WaitGroup
 
 func main() {
 	fmt.Println("Fetching initial node status...")
+
+	// Timeout global (ex. : 3 minutes)
+	go func() {
+		time.Sleep(1 * time.Minute)
+		fmt.Println("⏱️ Timeout global atteint, export forcé…")
+		exportJSONGraph()
+		os.Exit(0)
+	}()
+
 	initialIPs := fetchConnectedIPs(massaURL)
 
 	for _, ip := range initialIPs {
@@ -55,6 +64,7 @@ func main() {
 	wg.Wait()
 	exportJSONGraph()
 }
+
 
 func fetchConnectedIPs(url string) []string {
 	reqBody := []byte(`{"jsonrpc":"2.0","method":"get_status","params":[],"id":1}`)
