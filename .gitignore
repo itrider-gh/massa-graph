@@ -1,1 +1,5 @@
 graph.json
+release.sh
+package-lock.json
+package.json
+node_modules/
