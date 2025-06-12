@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Massa Graph</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    #banner {
+      background: #1b1c1d;
+      color: white;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+    }
+    #banner img {
+      height: 40px;
+      margin-right: 10px;
+    }
+    #banner h1 {
+      font-size: 22px;
+      margin: 0;
+    }
+    #map {
+      height: calc(100% - 60px);
+    }
+    .leaflet-tooltip {
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .popup-conn {
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #toolbox {
+      position: absolute;
+      top: 70px;
+      right: 10px;
+      z-index: 1000;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+      padding: 10px;
+      transition: all 0.3s ease;
+      width: 220px;
+    }
+    #toolboxContent {
+      display: none;
+    }
+    #toggleToolbox {
+      background: #1b1c1d;
+      color: white;
+      border: none;
+      width: 100%;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 5px;
+      margin-bottom: 5px;
+    }
+    .switchLabel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      border-radius: 20px;
+      transition: 0.4s;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.4s;
+    }
+    input:checked + .slider {
+      background-color: #4CAF50;
+    }
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+  </style>
+</head>
+<body>
+  <div id="banner">
+    <img src="https://miro.medium.com/v2/resize:fit:2400/1*sYGX_Mtp0tnQW8TZn-b7yg.png" alt="Massa Logo">
+    <h1>Massa Graph</h1>
+  </div>
+  <div id="map"></div>
+
+  <div id="toolbox">
+    <button id="toggleToolbox">☰</button>
+    <div id="toolboxContent">
+      <label><strong>Search Node IP:</strong></label><br>
+      <input type="text" id="searchInput" placeholder="e.g. 188.165.211.117" />
+      <button id="searchBtn">Search</button>
+      <hr>
+      <label class="switchLabel">
+        Show all links
+        <label class="switch">
+          <input type="checkbox" id="showAllLinks">
+          <span class="slider round"></span>
+        </label>
+      </label>
+    </div>
+  </div>
+
+<script>
+  const map = L.map('map').setView([20, 0], 2);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 18,
+  }).addTo(map);
+
+  fetch('graph.json')
+    .then(res => res.json())
+    .then(data => {
+      const ipToCoord = {};
+      const coordToNodes = {};
+      const ipToNode = {};
+      const allMarkers = [];
+      let activeLines = [];
+      let highlightedMarker = null;
+
+      const ipLinks = {};
+      data.links.forEach(link => {
+        if (!ipLinks[link.source]) ipLinks[link.source] = new Set();
+        if (!ipLinks[link.target]) ipLinks[link.target] = new Set();
+        ipLinks[link.source].add(link.target);
+        ipLinks[link.target].add(link.source);
+      });
+
+      function getCoordKey(lat, lon) {
+        return lat.toFixed(5) + "," + lon.toFixed(5);
+      }
+
+      function buildPopupContent(nodesAtCoord) {
+        return `<div class="popup-conn">` + nodesAtCoord.map(node => {
+          const connections = ipLinks[node.ip] || [];
+          const connList = [...connections].map(ip => `- ${ip}`).join('<br>') || 'Aucune';
+          return `
+            <strong>${node.ip}</strong><br>
+            Version: ${node.version || 'N/A'}<br>
+            Connexions:<br>${connList}<br><br>
+          `;
+        }).join('') + `</div>`;
+      }
+
+      function showConnectionsForNodes(nodes) {
+        activeLines.forEach(l => map.removeLayer(l));
+        activeLines = [];
+        const seen = new Set();
+        for (const node of nodes) {
+          const links = ipLinks[node.ip] || [];
+          for (const target of links) {
+            const from = ipToCoord[node.ip];
+            const to = ipToCoord[target];
+            const key = [node.ip, target].sort().join('-');
+            if (from && to && !seen.has(key)) {
+              const line = L.polyline([from, to], {
+                color: 'red',
+                weight: 1,
+                opacity: 0.5
+              }).addTo(map);
+              activeLines.push(line);
+              seen.add(key);
+            }
+          }
+        }
+      }
+
+      for (const node of [...data.nodes, ...(data.unreachable || [])]) {
+        if (node.lat !== 0 && node.lon !== 0) {
+          const key = getCoordKey(node.lat, node.lon);
+          if (!coordToNodes[key]) coordToNodes[key] = [];
+          coordToNodes[key].push(node);
+          ipToCoord[node.ip] = [node.lat, node.lon];
+          ipToNode[node.ip] = node;
+        }
+      }
+
+      for (const key in coordToNodes) {
+        const [lat, lon] = key.split(',').map(parseFloat);
+        const nodes = coordToNodes[key];
+        const color = nodes.some(n => n.version) ? 'blue' : 'gray';
+
+        const marker = L.circleMarker([lat, lon], {
+          radius: color === 'gray' ? 4 : 5,
+          color: color,
+          fillOpacity: color === 'gray' ? 0.3 : 0.6
+        }).addTo(map);
+
+        const tooltipText = nodes.length === 1
+          ? `${nodes[0].ip}\n${nodes[0].version || '(no response)'}`
+          : `${nodes.length} nodes`;
+
+        marker.bindTooltip(tooltipText, {
+          permanent: false,
+          direction: 'top',
+          offset: [0, -5]
+        });
+
+        marker.bindPopup(buildPopupContent(nodes));
+        marker.on('click', () => showConnectionsForNodes(nodes));
+
+        for (const node of nodes) {
+          allMarkers.push({ marker, ip: node.ip });
+        }
+      }
+
+      map.on('popupclose', () => {
+        activeLines.forEach(l => map.removeLayer(l));
+        activeLines = [];
+      });
+
+      document.getElementById('toggleToolbox').onclick = () => {
+        const box = document.getElementById('toolboxContent');
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      };
+
+      document.getElementById('searchBtn').onclick = () => {
+        const ip = document.getElementById('searchInput').value.trim();
+        if (!ipToCoord[ip]) {
+          alert('Node not found');
+          return;
+        }
+        map.setView(ipToCoord[ip], 5);
+        if (highlightedMarker) {
+          highlightedMarker.setStyle(highlightedMarker._originalStyle);
+          highlightedMarker = null;
+        }
+        const entry = allMarkers.find(entry => entry.ip === ip);
+        if (entry) {
+          const marker = entry.marker;
+          if (!marker._originalStyle) {
+            marker._originalStyle = {
+              radius: marker.options.radius,
+              color: marker.options.color,
+              weight: marker.options.weight || 1
+            };
+          }
+          marker.setStyle({
+            radius: 10,
+            color: 'orange',
+            weight: 3
+          });
+          marker.openPopup();
+          highlightedMarker = marker;
+        }
+      };
+
+      document.getElementById('showAllLinks').onchange = function () {
+        activeLines.forEach(l => map.removeLayer(l));
+        activeLines = [];
+        if (this.checked) {
+          const drawn = new Set();
+          for (const link of data.links) {
+            const from = ipToCoord[link.source];
+            const to = ipToCoord[link.target];
+            const key = [link.source, link.target].sort().join('-');
+            if (from && to && !drawn.has(key)) {
+              const line = L.polyline([from, to], {
+                color: 'red',
+                weight: 1,
+                opacity: 0.3
+              }).addTo(map);
+              activeLines.push(line);
+              drawn.add(key);
+            }
+          }
+        }
+      };
+    });
+</script>
+</body>
+</html>
