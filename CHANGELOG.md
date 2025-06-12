@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/itrider-gh/massa-graph/compare/v1.0.4...v1.1.1) (2025-06-12)
+
+
+### Bug Fixes
+
+* fix go script from being unfinishable ([cb17dd8](https://github.com/itrider-gh/massa-graph/commit/cb17dd87bd991d6b115311a4b09b53ebfd504213))
+
 ### [1.0.4](https://github.com/itrider-gh/massa-graph/compare/v1.1.0...v1.0.4) (2025-06-12)
 
 
