@@ -1,6 +1,6 @@
 {
   "name": "Massa Graph",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "scripts": {
     "release": "standard-version"
   },
