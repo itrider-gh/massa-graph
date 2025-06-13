@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.2.1](https://github.com/itrider-gh/massa-graph/compare/v1.2.0...v1.2.1) (2025-06-13)
+
+
+### Bug Fixes
+
+* fix build.sh ([9a76235](https://github.com/itrider-gh/massa-graph/commit/9a7623524162e810b931baaf2775945763ec8554))
+
 ## [1.2.0](https://github.com/itrider-gh/massa-graph/compare/v1.1.1...v1.2.0) (2025-06-13)
 
 
