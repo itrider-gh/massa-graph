@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/itrider-gh/massa-graph/compare/v1.1.1...v1.2.0) (2025-06-13)
+
+
+### Features
+
+* add node stats (revealing a delta between nodes and stakers number) ([9f3d5a0](https://github.com/itrider-gh/massa-graph/commit/9f3d5a0d7c5ea6d7654c9f674f1c4f8267e8cd17))
+
 ### [1.1.1](https://github.com/itrider-gh/massa-graph/compare/v1.0.4...v1.1.1) (2025-06-12)
 
 
