@@ -16,6 +16,7 @@
     height: 100%;
     margin: 0;
     padding: 0;
+    font-family: 'Segoe UI', sans-serif;
   }
 
   #banner {
@@ -83,16 +84,14 @@
     top: 70px;
     right: 10px;
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.95);
-    border-radius: 8px;
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
-    padding: 10px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    padding: 12px 15px;
     transition: all 0.3s ease;
-    width: 220px;
-  }
-
-  #toolboxContent {
-    display: none;
+    width: 250px;
+    font-size: 14px;
   }
 
   #toggleToolbox {
@@ -101,12 +100,72 @@
     border: none;
     width: 100%;
     font-size: 18px;
+    font-weight: bold;
     cursor: pointer;
-    padding: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: background 0.3s ease;
+    margin-bottom: 10px;
+  }
+
+  #toggleToolbox:hover {
+    background: #333;
+  }
+
+  #toolboxContent {
+    display: none;
+  }
+
+  #toolbox input[type="text"] {
+    width: 100%;
+    padding: 6px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    box-sizing: border-box;
+  }
+
+  #toolbox button {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  #toolbox button:hover {
+    background: #45a049;
+  }
+
+  #stats {
+    margin-top: 10px;
+    margin-bottom: 10px;
+  }
+
+  #stats strong {
+    display: block;
     margin-bottom: 5px;
   }
 
+  #statsContent {
+    font-family: monospace;
+    font-size: 13px;
+    background: #f7f7f7;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 8px;
+    line-height: 1.5;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
   .switchLabel {
+    margin-top: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -189,6 +248,11 @@
       <input type="text" id="searchInput" placeholder="e.g. 188.165.211.117" />
       <button id="searchBtn">Search</button>
       <hr>
+      <hr>
+      <div id="stats">
+        <strong>Stats:</strong>
+        <div id="statsContent" style="font-size: 13px; font-family: monospace;"></div>
+      </div>
       <label class="switchLabel">
         Show all links
         <label class="switch">
@@ -365,6 +429,41 @@
           }
         }
       };
+
+      // Calcul des statistiques
+    const stats = {
+      total: 0,
+      openApi: 0,
+      closedApi: 0,
+      versions: {}
+    };
+
+    for (const node of [...data.nodes, ...(data.unreachable || [])]) {
+      if (node.lat !== 0 && node.lon !== 0) {
+        stats.total++;
+        if (node.version) {
+          stats.openApi++;
+          stats.versions[node.version] = (stats.versions[node.version] || 0) + 1;
+        } else {
+          stats.closedApi++;
+        }
+      }
+    }
+
+    // Affichage des statistiques
+    const statsContent = document.getElementById('statsContent');
+    let versionLines = Object.entries(stats.versions)
+      .sort((a, b) => b[1] - a[1])
+      .map(([version, count]) => `v${version}: ${count}`)
+      .join('<br>');
+
+    statsContent.innerHTML = `
+      Total: ${stats.total}<br>
+      Open API: ${stats.openApi}<br>
+      Closed API: ${stats.closedApi}<br>
+      <br><u>Node versions:</u><br>${versionLines}
+    `;
+
     });
 </script>
 </body>
