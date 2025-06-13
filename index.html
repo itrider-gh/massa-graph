@@ -431,38 +431,38 @@
       };
 
       // Calcul des statistiques
-    const stats = {
-      total: 0,
-      openApi: 0,
-      closedApi: 0,
-      versions: {}
-    };
+      const stats = {
+        total: 0,
+        openApi: 0,
+        closedApi: 0,
+        versions: {}
+      };
 
-    for (const node of [...data.nodes, ...(data.unreachable || [])]) {
-      if (node.lat !== 0 && node.lon !== 0) {
-        stats.total++;
-        if (node.version) {
-          stats.openApi++;
-          stats.versions[node.version] = (stats.versions[node.version] || 0) + 1;
-        } else {
-          stats.closedApi++;
+      for (const node of [...data.nodes, ...(data.unreachable || [])]) {
+        if (node.lat !== 0 && node.lon !== 0) {
+          stats.total++;
+          if (node.version) {
+            stats.openApi++;
+            stats.versions[node.version] = (stats.versions[node.version] || 0) + 1;
+          } else {
+            stats.closedApi++;
+          }
         }
       }
-    }
 
-    // Affichage des statistiques
-    const statsContent = document.getElementById('statsContent');
-    let versionLines = Object.entries(stats.versions)
-      .sort((a, b) => b[1] - a[1])
-      .map(([version, count]) => `v${version}: ${count}`)
-      .join('<br>');
+      // Affichage des statistiques
+      const statsContent = document.getElementById('statsContent');
+      let versionLines = Object.entries(stats.versions)
+        .sort((a, b) => b[1] - a[1])
+        .map(([version, count]) => `v${version}: ${count}`)
+        .join('<br>');
 
-    statsContent.innerHTML = `
-      Total: ${stats.total}<br>
-      Open API: ${stats.openApi}<br>
-      Closed API: ${stats.closedApi}<br>
-      <br><u>Node versions:</u><br>${versionLines}
-    `;
+      statsContent.innerHTML = `
+        Total: ${stats.total}<br>
+        Open API: ${stats.openApi}<br>
+        Closed API: ${stats.closedApi}<br>
+        <br><u>Node versions:</u><br>${versionLines}
+      `;
 
     });
 </script>
